@@ -1,20 +1,27 @@
-const express = require('express');
-const mongoose = require('mongoose');
-const cors = require('cors');
-const dotenv = require('dotenv');
+const express = require('express');// Import the express package
+const mongoose = require('mongoose');// Import the mongoose package
+const cors = require('cors');// Import the cors package
+const dotenv = require('dotenv');// Import the dotenv package
+const authRoutes = require('./routes/authRoutes');// Import the auth routes
 const movieRoutes = require('./routes/movieRoutes'); // Import the movie routes
-dotenv.config();
+const reservationRoutes = require('./routes/reservationRoutes'); // Import the reservation routes
+const userRoutes = require('./routes/userRoutes');// Import the user routes
+dotenv.config();// Load environment variables from .env file
 const app = express();
 
 // Middleware
 app.use(cors());
 app.use(express.json());
 
-// Use movie routes
-app.use('/api', movieRoutes); // Add '/api' as base route for movie routes
+// Routes
+app.use('/api/users', authRoutes);// Use auth routes
+app.use('/api', movieRoutes); // Use movie routes
+app.use('/api/reservations', reservationRoutes);// Use reservation routes
+app.use('/api', userRoutes);// Use user routes
 
+// Start the server
 const PORT = process.env.PORT || 5000;
-
+// Connect to MongoDB
 mongoose.connect('mongodb://127.0.0.1:27017/movieReservation')
   .then(() => {
     console.log('Connected to MongoDB');
@@ -25,4 +32,4 @@ mongoose.connect('mongodb://127.0.0.1:27017/movieReservation')
   .catch((err) => {
     console.log('MongoDB connection error:', err);
   });
-
+// Start the server
