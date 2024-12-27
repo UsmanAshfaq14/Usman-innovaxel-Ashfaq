@@ -1,18 +1,19 @@
-// src/server.js
 const express = require('express');
-const cors = require('cors'); // Import cors package
 const mongoose = require('mongoose');
-const authRoutes = require('./routes/auth'); // Import auth routes
-
+const cors = require('cors');
+const dotenv = require('dotenv');
+const movieRoutes = require('./routes/movieRoutes'); // Import the movie routes
+dotenv.config();
 const app = express();
 
-// Enable CORS for all routes
-app.use(cors());  // This line allows cross-origin requests
+// Middleware
+app.use(cors());
+app.use(express.json());
 
-app.use(express.json());  // To parse JSON requests
+// Use movie routes
+app.use('/api', movieRoutes); // Add '/api' as base route for movie routes
 
-// Use authentication routes
-app.use('/api/auth', authRoutes);
+const PORT = process.env.PORT || 5000;
 
 mongoose.connect('mongodb://127.0.0.1:27017/movieReservation')
   .then(() => {
