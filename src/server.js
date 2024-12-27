@@ -1,16 +1,27 @@
+// src/server.js
 const express = require('express');
+const cors = require('cors'); // Import cors package
+const mongoose = require('mongoose');
+const authRoutes = require('./routes/auth'); // Import auth routes
+
 const app = express();
-const PORT = process.env.PORT || 5000;
 
-// Middleware to parse JSON
-app.use(express.json());
+// Enable CORS for all routes
+app.use(cors());  // This line allows cross-origin requests
 
-// Simple test route
-app.get('/', (req, res) => {
-  res.send('Movie Reservation System API');
-});
+app.use(express.json());  // To parse JSON requests
 
-// Start server
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-});
+// Use authentication routes
+app.use('/api/auth', authRoutes);
+
+mongoose.connect('mongodb://127.0.0.1:27017/movieReservation')
+  .then(() => {
+    console.log('Connected to MongoDB');
+    app.listen(5000, () => {
+      console.log('Server running on port 5000');
+    });
+  })
+  .catch((err) => {
+    console.log('MongoDB connection error:', err);
+  });
+
