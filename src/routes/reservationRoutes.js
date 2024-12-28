@@ -1,41 +1,48 @@
 const express = require('express');
+const SeatReservation = require('../models/SeatReservation');
+const Showtime = require('../models/Showtime');
+const authMiddleware = require('../middlewares/authMiddleware');
 const router = express.Router();
-const Reservation = require('../models/Reservation');
 
-// POST /api/reservations
-router.post('/', async (req, res) => {
+// POST /reserve-seats - Reserve seats for a showtime
+router.post('/reserve-seats', authMiddleware, async (req, res) => {
+  const { showtimeId, seats } = req.body;
+  const userId = req.user.id; // Retrieved from auth middleware
+
   try {
-    const { user, movie, showtime, seats } = req.body;
-    if (!user || !movie || !showtime || !seats) {
-      return res.status(400).json({ message: 'All fields are required.' });
+    // Check if the showtime exists
+    const showtime = await Showtime.findById(showtimeId);
+    if (!showtime) {
+      return res.status(404).json({ error: 'Showtime not found' });
     }
 
-    const newReservation = new Reservation({ user, movie, showtime, seats });
+    // Check if seats are already reserved
+    const existingReservations = await SeatReservation.find({ showtimeId, seats: { $in: seats } });
+    if (existingReservations.length > 0) {
+      return res.status(400).json({ error: 'One or more seats are already reserved' });
+    }
+
+    // Create a new reservation
+    const newReservation = new SeatReservation({ userId, showtimeId, seats });
     await newReservation.save();
-    res.json({ message: 'Reservation created successfully' });
+
+    res.status(201).json({ message: 'Seats reserved successfully', reservation: newReservation });
   } catch (err) {
-    res.status(500).json({ error: 'Error creating reservation' });
+    console.error(err);
+    res.status(500).json({ error: 'Server error while reserving seats' });
   }
 });
 
-// GET /api/reservations
-router.get('/', async (req, res) => {
+// GET /reservations - Get all reservations for the logged-in user
+router.get('/reservations', authMiddleware, async (req, res) => {
+  const userId = req.user.id;
+
   try {
-    const reservations = await Reservation.find();
+    const reservations = await SeatReservation.find({ userId }).populate('showtimeId', 'date time theater');
     res.json(reservations);
   } catch (err) {
-    res.status(500).json({ error: 'Error fetching reservations' });
-  }
-});
-
-// GET /api/reservations/:id
-router.get('/:id', async (req, res) => {
-  try {
-    const reservation = await Reservation.findById(req.params.id);
-    if (!reservation) return res.status(404).json({ message: 'Reservation not found' });
-    res.json(reservation);
-  } catch (err) {
-    res.status(500).json({ error: 'Error fetching reservation' });
+    console.error(err);
+    res.status(500).json({ error: 'Server error while fetching reservations' });
   }
 });
 

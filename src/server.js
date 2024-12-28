@@ -26,6 +26,7 @@ app.use('/api', userRoutes);// Use user routes
 app.use('/api', profileRoutes);  // Profile routes
 app.use('/api', movieRoutes);// Use movie routes
 app.use('/api', showtimeRoutes);// Use showtime routes
+app.use('/api', reservationRoutes);// Use reservation routes
 
 
 // Start the server
