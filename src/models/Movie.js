@@ -1,26 +1,13 @@
 const mongoose = require('mongoose');
 
 const movieSchema = new mongoose.Schema({
-  title: {
-    type: String,
-    required: true,
-  },
-  description: {
-    type: String,
-    required: true,
-  },
-  releaseDate: {
-    type: Date,
-    required: true,
-  },
-  showtimes: [
-    {
-      type: Date,
-      required: true,
-    },
-  ],
+  title: { type: String, required: true },
+  genre: { type: String, required: true },
+  description: { type: String },
+  releaseDate: { type: Date, required: true },
+  duration: { type: Number, required: true }, // Duration in minutes
+  createdAt: { type: Date, default: Date.now },
+  updatedAt: { type: Date, default: Date.now },
 });
 
-const Movie = mongoose.model('Movie', movieSchema);
-
-module.exports = Movie;
+module.exports = mongoose.model('Movie', movieSchema);

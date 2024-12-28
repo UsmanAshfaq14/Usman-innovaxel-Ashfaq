@@ -23,6 +23,7 @@ app.use('/api', movieRoutes); // Use movie routes
 app.use('/api/reservations', reservationRoutes);// Use reservation routes
 app.use('/api', userRoutes);// Use user routes
 app.use('/api', profileRoutes);  // Profile routes
+app.use('/api', movieRoutes);// Use movie routes
 
 
 // Start the server
