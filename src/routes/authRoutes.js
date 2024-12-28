@@ -1,6 +1,11 @@
 const express = require('express');
 const argon2 = require('argon2');
-const User = require('../models/User'); // Assuming your user schema is in ../models/User
+const jwt = require('jsonwebtoken');
+const User = require('../models/User');
+const config = require('../config/config'); // Correct import
+require('dotenv').config();  
+
+
 
 const authRouter = express.Router();
 
@@ -54,7 +59,18 @@ authRouter.post('/login', async (req, res) => {
 
     if (isMatch) {
       console.log('Password match successful');
-      return res.status(200).json({ message: 'Login successful' });
+      
+      // Define the payload for the JWT (you can include whatever data you want)
+      const payload = {
+        id: user._id,
+        email: user.email
+      };
+
+      // Sign the JWT token
+      const token = jwt.sign(payload, config.JWT_SECRET, { expiresIn: '1h' });
+
+      // Send the token in the response
+      return res.status(200).json({ message: 'Login successful', token });
     } else {
       console.log('Password mismatch');
       return res.status(400).json({ error: 'Invalid credentials' });

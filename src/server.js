@@ -6,18 +6,24 @@ const authRoutes = require('./routes/authRoutes');// Import the auth routes
 const movieRoutes = require('./routes/movieRoutes'); // Import the movie routes
 const reservationRoutes = require('./routes/reservationRoutes'); // Import the reservation routes
 const userRoutes = require('./routes/userRoutes');// Import the user routes
+const profileRoutes = require('./routes/profileRoutes'); // Assuming you create a separate profile routes file
+const config = require('./config/config'); // Configuration for DB and JWT secret
+const bodyParser = require('body-parser'); // Import body-parser
 dotenv.config();// Load environment variables from .env file
 const app = express();
 
 // Middleware
 app.use(cors());
 app.use(express.json());
+app.use(bodyParser.json());
 
 // Routes
 app.use('/api/users', authRoutes);// Use auth routes
 app.use('/api', movieRoutes); // Use movie routes
 app.use('/api/reservations', reservationRoutes);// Use reservation routes
 app.use('/api', userRoutes);// Use user routes
+app.use('/api', profileRoutes);  // Profile routes
+
 
 // Start the server
 const PORT = process.env.PORT || 5000;
