@@ -2,7 +2,9 @@ const express = require('express');
 const Movie = require('../models/Movie');
 const authMiddleware = require('../middlewares/authMiddleware');
 const adminMiddleware = require('../middlewares/adminMiddleware');
+const SeatReservation = require('../models/SeatReservation');
 const router = express.Router();
+const mongoose = require('mongoose');// Import the mongoose package
 
 // GET /admin/movies - Get all movies
 router.get('/admin/movies', authMiddleware, adminMiddleware, async (req, res) => {
@@ -66,5 +68,48 @@ router.delete('/admin/movies/:id', authMiddleware, adminMiddleware, async (req, 
     res.status(500).json({ error: 'Server error' });
   }
 });
+
+// Admin - Get reservation statistics for a movie or showtime
+router.get('/admin/reservations', async (req, res) => {
+    const { movieId, showtimeId, userId } = req.query;
+  
+    // Validate ObjectId format for movieId, showtimeId, and userId
+    if (movieId && !mongoose.Types.ObjectId.isValid(movieId)) {
+      return res.status(400).json({ error: 'Invalid movieId format' });
+    }
+    if (showtimeId && !mongoose.Types.ObjectId.isValid(showtimeId)) {
+      return res.status(400).json({ error: 'Invalid showtimeId format' });
+    }
+    if (userId && !mongoose.Types.ObjectId.isValid(userId)) {
+      return res.status(400).json({ error: 'Invalid userId format' });
+    }
+  
+    try {
+      // Build the query based on optional filters
+      const filter = {};
+      if (movieId) filter.movieId = movieId;
+      if (showtimeId) filter.showtimeId = showtimeId;
+      if (userId) filter.userId = userId;
+  
+      // Fetch the reservation data based on the filter
+      const reservations = await SeatReservation.find(filter);
+  
+      // Group reservations by movie or showtime if needed
+      const reservationCount = reservations.length;
+      
+      // Fetch additional information (optional)
+      const movie = movieId ? await Movie.findById(movieId) : null;
+  
+      return res.status(200).json({
+        message: 'Reservation report retrieved successfully',
+        reservationCount,
+        movie: movie ? { title: movie.title, genre: movie.genre } : null,
+        reservations: reservations
+      });
+    } catch (err) {
+      console.error('Error fetching reservation data:', err);
+      return res.status(500).json({ error: 'Server error while fetching reservation data' });
+    }
+  });
 
 module.exports = router;
