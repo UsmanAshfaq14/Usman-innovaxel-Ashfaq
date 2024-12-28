@@ -1,7 +1,8 @@
 const express = require('express');
 const argon2 = require('argon2');
-const jwt = require('jsonwebtoken');
+
 const User = require('../models/User');
+const jwt = require('jsonwebtoken');
 const config = require('../config/config'); // Correct import
 require('dotenv').config();  
 
@@ -11,20 +12,21 @@ const authRouter = express.Router();
 
 // User Registration Endpoint
 authRouter.post('/register', async (req, res) => {
-  const { email, password } = req.body;
+  const { email, password, isAdmin = false } = req.body; // Default isAdmin to false
 
   try {
     console.log('Registering user...');
     console.log('Email:', email);
     console.log('Password:', password);
+    console.log('Is Admin:', isAdmin); // Log to see if admin is set
 
-    // Hash the password using Argon2 (argon2 handles salting internally)
+    // Hash the password using Argon2
     const hashedPassword = await argon2.hash(password);
 
     console.log('Hashed Password:', hashedPassword);
 
-    // Save the user with the hashed password
-    const newUser = new User({ email, password: hashedPassword });
+    // Save the user with the hashed password and isAdmin flag
+    const newUser = new User({ email, password: hashedPassword, isAdmin });
     await newUser.save();
 
     res.status(201).json({ message: 'User registered successfully' });
@@ -54,16 +56,17 @@ authRouter.post('/login', async (req, res) => {
     console.log('Found user:', user.email);
     console.log('Stored password hash:', user.password);
 
-    // Verify the entered password with the stored hashed password using Argon2
+    // Verify the entered password with the stored hashed password
     const isMatch = await argon2.verify(user.password, password);
 
     if (isMatch) {
       console.log('Password match successful');
       
-      // Define the payload for the JWT (you can include whatever data you want)
+      // Define the payload for the JWT (including isAdmin flag)
       const payload = {
         id: user._id,
-        email: user.email
+        email: user.email,
+        isAdmin: user.isAdmin // Add the isAdmin flag here
       };
 
       // Sign the JWT token

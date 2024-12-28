@@ -8,6 +8,7 @@ const reservationRoutes = require('./routes/reservationRoutes'); // Import the r
 const userRoutes = require('./routes/userRoutes');// Import the user routes
 const profileRoutes = require('./routes/profileRoutes'); // Assuming you create a separate profile routes file
 const showtimeRoutes = require('./routes/showtimeRoutes');// Import the showtime routes
+const adminRoutes = require('./routes/adminRoutes'); // Import admin routes
 const config = require('./config/config'); // Configuration for DB and JWT secret
 const bodyParser = require('body-parser'); // Import body-parser
 dotenv.config();// Load environment variables from .env file
@@ -27,6 +28,7 @@ app.use('/api', profileRoutes);  // Profile routes
 app.use('/api', movieRoutes);// Use movie routes
 app.use('/api', showtimeRoutes);// Use showtime routes
 app.use('/api', reservationRoutes);// Use reservation routes
+app.use('/api', adminRoutes);// Use admin routes
 
 
 // Start the server
