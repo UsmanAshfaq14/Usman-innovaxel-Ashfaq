@@ -1,9 +1,71 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const router = express.Router();
+const SeatReservation = require('../models/SeatReservation'); // Import the SeatReservation model
 const Showtime = require('../models/Showtime');
 
-// Reserve Seats Endpoint
+// View upcoming reservations for a user
+router.get('/reservations', async (req, res) => {
+  try {
+    const { userId } = req.query; // Get the userId from query params (or from JWT)
+
+    // Fetch future reservations for the user
+    const reservations = await SeatReservation.find({ userId })
+      .populate('showtimeId') // Populate showtime details
+      .where('showtimeId.date').gt(new Date()) // Only future showtimes
+      .exec();
+
+    if (!reservations || reservations.length === 0) {
+      return res.status(404).json({ error: 'No upcoming reservations found' });
+    }
+
+    // Return the reservation details along with showtime information
+    return res.status(200).json({ message: 'Upcoming reservations fetched successfully', reservations });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Server error while fetching reservations' });
+  }
+});
+
+// Cancel an upcoming reservation
+router.delete('/reservations/:reservationId', async (req, res) => {
+  try {
+    const { reservationId } = req.params;
+
+    // Fetch the reservation to ensure it exists and get associated showtime
+    const reservation = await SeatReservation.findById(reservationId).populate('showtimeId');
+
+    if (!reservation) {
+      return res.status(404).json({ error: 'Reservation not found' });
+    }
+
+    // Check if the showtime is in the future
+    const showtime = reservation.showtimeId;
+    if (new Date(showtime.date) < new Date()) {
+      return res.status(400).json({ error: 'Cannot cancel past reservations' });
+    }
+
+    // Remove seats from reservedSeats and make them available
+    const canceledSeats = reservation.seats.map(seat => seat.seatNumber);
+
+    // Update the showtime: remove seats from reservedSeats and add to availableSeats
+    showtime.reservedSeats = showtime.reservedSeats.filter(seat => !canceledSeats.includes(seat));
+    showtime.availableSeats.push(...canceledSeats);
+
+    // Remove the reservation from the SeatReservation collection
+    await SeatReservation.findByIdAndDelete(reservationId);
+
+    // Save the updated showtime
+    await showtime.save();
+
+    res.status(200).json({ message: 'Reservation canceled successfully' });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ error: 'Server error while canceling reservation' });
+  }
+});
+
+// Reserve Seats Endpoint (unchanged, but included for reference)
 router.post('/reserve-seats', async (req, res) => {
   try {
     const { showtimeId, seats } = req.body;
@@ -71,29 +133,5 @@ router.post('/reserve-seats', async (req, res) => {
     res.status(500).json({ error: 'Server error while reserving seats' });
   }
 });
-
-
-// Optional: Clear expired locks with a scheduled job
-// Clear expired locks (optional, e.g., via a scheduled job)
-setInterval(async () => {
-  try {
-    const expirationTime = 3 * 60 * 1000; // 3 minutes
-    const now = new Date();
-
-    // Fetch all showtimes and clear expired locks
-    const showtimes = await Showtime.find({});
-    for (const showtime of showtimes) {
-      // Remove expired locks
-      showtime.lockedSeats = showtime.lockedSeats.filter(
-        (lock) => now - lock.lockedAt < expirationTime
-      );
-      await showtime.save();
-    }
-
-    console.log('Expired locks cleared successfully');
-  } catch (error) {
-    console.error('Error clearing expired locks:', error);
-  }
-}, 60000); // Run every 1 minute
 
 module.exports = router;
