@@ -71,45 +71,59 @@ router.delete('/admin/movies/:id', authMiddleware, adminMiddleware, async (req, 
 
 // Admin - Get reservation statistics for a movie or showtime
 router.get('/admin/reservations', async (req, res) => {
-    const { movieId, showtimeId, userId } = req.query;
-  
-    // Validate ObjectId format for movieId, showtimeId, and userId
-    if (movieId && !mongoose.Types.ObjectId.isValid(movieId)) {
-      return res.status(400).json({ error: 'Invalid movieId format' });
-    }
-    if (showtimeId && !mongoose.Types.ObjectId.isValid(showtimeId)) {
-      return res.status(400).json({ error: 'Invalid showtimeId format' });
-    }
-    if (userId && !mongoose.Types.ObjectId.isValid(userId)) {
-      return res.status(400).json({ error: 'Invalid userId format' });
-    }
-  
-    try {
-      // Build the query based on optional filters
-      const filter = {};
-      if (movieId) filter.movieId = movieId;
-      if (showtimeId) filter.showtimeId = showtimeId;
-      if (userId) filter.userId = userId;
-  
-      // Fetch the reservation data based on the filter
-      const reservations = await SeatReservation.find(filter);
-  
-      // Group reservations by movie or showtime if needed
-      const reservationCount = reservations.length;
+  const { movieId, showtimeId, userId } = req.query;
+
+  // Validate ObjectId format for movieId, showtimeId, and userId
+  if (movieId && !mongoose.Types.ObjectId.isValid(movieId)) {
+    return res.status(400).json({ error: 'Invalid movieId format' });
+  }
+  if (showtimeId && !mongoose.Types.ObjectId.isValid(showtimeId)) {
+    return res.status(400).json({ error: 'Invalid showtimeId format' });
+  }
+  if (userId && !mongoose.Types.ObjectId.isValid(userId)) {
+    return res.status(400).json({ error: 'Invalid userId format' });
+  }
+
+  try {
+    // Build the query based on optional filters
+    const filter = {};
+    if (movieId) filter.movieId = movieId;
+    if (showtimeId) filter.showtimeId = showtimeId;
+    if (userId) filter.userId = userId;
+
+    // Fetch the reservation data based on the filter
+    const reservations = await SeatReservation.find(filter);
+
+    // Group reservations by movie or showtime if needed
+    const reservationCount = reservations.length;
+    
+    // Fetch additional information (optional)
+    const movie = movieId ? await Movie.findById(movieId) : null;
+    const showtime = showtimeId ? await Showtime.findById(showtimeId) : null;
+
+    let availableSeats = 0;
+    let revenue = 0;
+    if (showtime) {
+      const totalSeats = showtime.availableSeats.length;
+      const reservedSeats = showtime.reservedSeats.length;
+      availableSeats = totalSeats - reservedSeats;
       
-      // Fetch additional information (optional)
-      const movie = movieId ? await Movie.findById(movieId) : null;
-  
-      return res.status(200).json({
-        message: 'Reservation report retrieved successfully',
-        reservationCount,
-        movie: movie ? { title: movie.title, genre: movie.genre } : null,
-        reservations: reservations
-      });
-    } catch (err) {
-      console.error('Error fetching reservation data:', err);
-      return res.status(500).json({ error: 'Server error while fetching reservation data' });
+      const ticketPrice = movie ? movie.ticketPrice : 10; // Default price if not set
+      revenue = reservedSeats * ticketPrice;
     }
-  });
+
+    return res.status(200).json({
+      message: 'Reservation report retrieved successfully',
+      reservationCount,
+      availableSeats,
+      revenue,
+      movie: movie ? { title: movie.title, genre: movie.genre } : null,
+      reservations: reservations
+    });
+  } catch (err) {
+    console.error('Error fetching reservation data:', err);
+    return res.status(500).json({ error: 'Server error while fetching reservation data' });
+  }
+});
 
 module.exports = router;
