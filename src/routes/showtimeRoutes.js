@@ -5,7 +5,7 @@ const router = express.Router();
 
 // POST /showtimes - Add a new showtime
 router.post('/showtimes', async (req, res) => {
-  const { movieId, date, time, theater } = req.body;
+  const { movieId, date, time, theater, seatingPlan } = req.body;
 
   try {
     // Validate movie existence
@@ -14,7 +14,24 @@ router.post('/showtimes', async (req, res) => {
       return res.status(404).json({ error: 'Movie not found' });
     }
 
-    const newShowtime = new Showtime({ movieId, date, time, theater });
+    // Validate seatingPlan (it should include seats)
+    if (!seatingPlan || !Array.isArray(seatingPlan)) {
+      return res.status(400).json({ error: 'Seating plan is required and should be an array.' });
+    }
+
+    // Initialize availableSeats based on the seatingPlan
+    const availableSeats = seatingPlan.map(seat => seat); // or process the seatingPlan if needed
+
+    const newShowtime = new Showtime({
+      movieId,
+      date,
+      time,
+      theater,
+      availableSeats,  // Initialize availableSeats
+      reservedSeats: [],  // Empty reservedSeats initially
+      lockedSeats: []     // Empty lockedSeats initially
+    });
+
     await newShowtime.save();
     res.status(201).json({ message: 'Showtime added successfully', showtime: newShowtime });
   } catch (err) {
@@ -22,6 +39,7 @@ router.post('/showtimes', async (req, res) => {
     res.status(500).json({ error: 'Server error while adding the showtime' });
   }
 });
+
 
 // GET /showtimes - Get all showtimes
 router.get('/showtimes', async (req, res) => {

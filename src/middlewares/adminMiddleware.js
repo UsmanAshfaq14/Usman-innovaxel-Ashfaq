@@ -17,9 +17,10 @@ const adminMiddleware = (req, res, next) => {
       req.user = decoded;
   
       // Check if the user is an admin
-      if (!req.user.isAdmin) {
+      if (!req.user || !req.user.isAdmin) {
+        console.log(`Access denied for user ID: ${req.user?.id}. Admin privileges required.`);
         return res.status(403).json({ error: 'Access denied. Admins only.' });
-      }
+    }
   
       next(); // User is admin, continue to the next route
     });

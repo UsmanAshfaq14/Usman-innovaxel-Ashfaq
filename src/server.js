@@ -22,13 +22,13 @@ app.use(bodyParser.json());
 // Routes
 app.use('/api/users', authRoutes);// Use auth routes
 app.use('/api', movieRoutes); // Use movie routes
-app.use('/api/reservations', reservationRoutes);// Use reservation routes
 app.use('/api', userRoutes);// Use user routes
 app.use('/api', profileRoutes);  // Profile routes
 app.use('/api', movieRoutes);// Use movie routes
 app.use('/api', showtimeRoutes);// Use showtime routes
 app.use('/api', reservationRoutes);// Use reservation routes
 app.use('/api', adminRoutes);// Use admin routes
+
 
 
 // Start the server
